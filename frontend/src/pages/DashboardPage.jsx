@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import {
   FiActivity,
   FiShield,
@@ -9,7 +10,7 @@ import SectionHeader from '../components/SectionHeader.jsx'
 import StatCard from '../components/StatCard.jsx'
 import ThreatWidget from '../components/ThreatWidget.jsx'
 import GlassCard from '../components/GlassCard.jsx'
-import { dashboardStats, recentAnalyses, threatSummary } from '../data/mockData.js'
+import { api } from '../services/api.js'
 
 const statIcons = [
   <FiActivity key="activity" />,
@@ -19,6 +20,40 @@ const statIcons = [
 ]
 
 const DashboardPage = () => {
+  const [stats, setStats] = useState([])
+  const [recent, setRecent] = useState([])
+  const [threats, setThreats] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const [statsData, recentData, threatsData] = await Promise.all([
+          api.getStats(),
+          api.getRecent(),
+          api.getSummary(),
+        ])
+        setStats(statsData)
+        setRecent(recentData)
+        setThreats(threatsData)
+      } catch (err) {
+        setError('Failed to sync live telemetry')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDashboardData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-cyan-400 border-t-transparent" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-12">
       <SectionHeader
@@ -31,9 +66,15 @@ const DashboardPage = () => {
         }
       />
 
+      {error && (
+        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200">
+          {error}. Displaying buffered local session data.
+        </div>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {dashboardStats.map((stat, index) => (
-          <StatCard key={stat.title} {...stat} icon={statIcons[index]} />
+        {stats.map((stat, index) => (
+          <StatCard key={stat.title} {...stat} icon={statIcons[index] || <FiActivity />} />
         ))}
       </div>
 
@@ -65,7 +106,7 @@ const DashboardPage = () => {
                 </tr>
               </thead>
               <tbody className="text-slate-300">
-                {recentAnalyses.map((item) => (
+                {recent.map((item) => (
                   <tr
                     key={item.id}
                     className="border-t border-white/5 transition hover:bg-white/5"
@@ -73,10 +114,14 @@ const DashboardPage = () => {
                     <td className="py-3 font-medium text-slate-100">
                       {item.type}
                     </td>
-                    <td className="py-3">{item.target}</td>
+                    <td className="py-3 truncate max-w-[200px]">{item.target}</td>
                     <td className="py-3">{item.score}</td>
                     <td className="py-3">
-                      <span className="rounded-full bg-rose-500/15 px-3 py-1 text-xs font-semibold text-rose-200">
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        item.score >= 75 ? 'bg-rose-500/15 text-rose-200' :
+                        item.score >= 40 ? 'bg-amber-500/15 text-amber-200' :
+                        'bg-emerald-500/15 text-emerald-200'
+                      }`}>
                         {item.verdict}
                       </span>
                     </td>
@@ -95,7 +140,7 @@ const DashboardPage = () => {
             title="Threat Summary"
             subtitle="Campaign clusters detected this week."
           />
-          {threatSummary.map((threat) => (
+          {threats.map((threat) => (
             <ThreatWidget key={threat.id} {...threat} />
           ))}
         </div>

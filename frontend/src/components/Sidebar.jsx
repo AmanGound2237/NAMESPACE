@@ -1,11 +1,13 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   FiHome,
   FiGrid,
   FiShield,
   FiActivity,
   FiShare2,
+  FiLogOut,
 } from 'react-icons/fi'
+import { api } from '../services/api.js'
 
 const navItems = [
   { label: 'Home', path: '/', icon: FiHome },
@@ -15,6 +17,13 @@ const navItems = [
 ]
 
 const Sidebar = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    api.logout();
+    navigate('/login');
+  };
+
   return (
     <aside className="sticky top-0 hidden h-screen w-72 flex-col border-r border-white/10 bg-slate-950/70 px-6 py-8 backdrop-blur lg:flex">
       <div className="mb-10">
@@ -24,6 +33,7 @@ const Sidebar = () => {
           Unified visibility across suspicious signals.
         </p>
       </div>
+      
       <nav className="flex flex-1 flex-col gap-2">
         {navItems.map((item) => {
           const Icon = item.icon
@@ -45,14 +55,25 @@ const Sidebar = () => {
           )
         })}
       </nav>
-      <div className="glass glow-border mt-10 rounded-2xl p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-200">
-            <FiActivity />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Live</p>
-            <p className="text-sm font-semibold text-slate-100">Threat pulse active</p>
+
+      <div className="mt-auto space-y-6">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-400 hover:bg-rose-500/10 hover:text-rose-200 transition cursor-pointer"
+        >
+          <FiLogOut className="text-lg" />
+          Logout
+        </button>
+
+        <div className="glass glow-border rounded-2xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-200">
+              <FiActivity />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Live</p>
+              <p className="text-sm font-semibold text-slate-100">Threat pulse active</p>
+            </div>
           </div>
         </div>
       </div>

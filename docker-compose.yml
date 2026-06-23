@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  neo4j:
+    image: neo4j:5.20.0-community
+    container_name: truthnet-neo4j
+    ports:
+      - "7474:7474" # Neo4j Browser Console
+      - "7687:7687" # Bolt Protocol Port
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    networks:
+      - truthnet-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: truthnet-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=password
+      - JWT_SECRET=${JWT_SECRET:-9a4f2c8d3b7a1e5f8c2e6d9b0a3f4e7c1b5d8e2f9a3c6b0d1e4f7a2c5b8d0e3f}
+      - JWT_EXPIRATION_MS=${JWT_EXPIRATION_MS:-86400000}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - TESSERACT_DATA_PATH=/usr/share/tesseract-ocr/4.00/tessdata
+    depends_on:
+      - neo4j
+    networks:
+      - truthnet-network
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+
+networks:
+  truthnet-network:
+    driver: bridge
